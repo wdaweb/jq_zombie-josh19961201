@@ -155,7 +155,7 @@
         // 重設分數及倒數秒數
         score = 0
         $(`#text-score`).text(score) //改分數的文字
-        countdown = 30
+        countdown = 3
         $(`#text-time`).text(countdown) //改倒數的文字
 
         // 開始計時器------------------------------
@@ -218,7 +218,7 @@
             $(`#btn-start`).attr(`disabled`, false)
 
             // 如果分數比最高分內的分數還高的話...
-            if (score > highscore.score) {
+            if (score > highscore.score || highscore.score === '-') {
               // 破紀錄的視窗，使用sweetalert2製作
               swal
                 .fire({
