@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shooting Game</title>
+    <link
+      rel="stylesheet"
+      href="https://meyerweb.com/eric/tools/css/reset/reset200802.css"
+    />
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Russo+One&display=swap');
+      body {
+        font-family: 'Russo One', '微軟正黑體';
+      }
+      #container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        /* background: url(./imgs/background.jpg) center/cover; */
+        background-image: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
+      }
+      #info {
+        width: 900px;
+        height: 130px;
+
+        background-color: #ffffd6;
+        color: #dd4d3e;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        text-align: center;
+        line-height: 2rem;
+        font-weight: bold;
+        font-size: 1.5rem;
+        box-shadow: 0 0 5px #38799555;
+        border-radius: 10px;
+      }
+      #game {
+        width: 900px;
+        height: 600px;
+        background-color: #ffffd6;
+        position: relative;
+        cursor: url(./imgs/cursor.ico) 50 50, auto;
+        margin-top: 15px;
+        box-shadow: 0 0 5px #38799555;
+        border-radius: 10px;
+      }
+      img {
+        position: absolute;
+        user-select: none;
+        -webkit-user-select: none;
+        -webkit-user-drag: none;
+        height: 100px;
+      }
+      .exolotion {
+        pointer-events: none;
+      }
+      #btn-start {
+        border: none;
+        padding: 10px 30px;
+        border-radius: 10px;
+        cursor: pointer;
+        color: #dd4d3e;
+        font-family: 'Russo One', '微軟正黑體';
+        font-size: 1.3rem;
+        border: 2px solid #dd4d3e;
+      }
+      #text-score,
+      #text-time,
+      #text-highscorename,
+      #text-highscore {
+        color: #387995;
+      }
+      .infoText {
+        height: 80%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <div id="info">
+        <button id="btn-start">
+          GAME <br />
+          START
+        </button>
+
+        <div class="infoText">
+          <span> SCORE</span><span id="text-score">0</span>
+        </div>
+
+        <div class="infoText">
+          <span>GAME</span><span>TIME</span><span id="text-time">0</span>
+        </div>
+
+        <div class="infoText">
+          <span>RECORD</span><span>HOLDER</span
+          ><span id="text-highscorename"></span>
+        </div>
+
+        <div class="infoText">
+          <span>TOP SCORE</span><span>RECORD</span
+          ><span id="text-highscore"></span>
+        </div>
+      </div>
+      <div id="game"></div>
+    </div>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"
+      integrity="sha512-aVKKRRi/Q/YV+4mjoKBsE4x3H+BkegoM/em46NNlCqNTmUYADjBbeNefNxYV7giUp0VxICtqdrbqU7iVaeZNXA=="
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+      let score = 0
+      let countdown = 0
+      let timer = 0
+
+      const highscore = localStorage.shootinggame
+        ? JSON.parse(localStorage.shootinggame)
+        : { name: '-', score: '-' }
+      $('#text-highscorename').text(highscore.name)
+      $('#text-highscore').text(highscore.score)
+
+      function move(ball) {
+        // 球移動的目的地
+        const top = `${Math.round(Math.random() * 500)}px` //隨機X軸
+        const left = `${Math.round(Math.random() * 800)}px` //隨機Y軸
+
+        // 移動球，使用本函數內的top,left重新設定位置
+        // 因為原本的JQ物件的top和left就是抓外部的值，因此這邊的top和left是指要改的屬性，接著照原本的code就可以抓到新的隨機位置
+        // 每兩秒移動一次
+        // 在callback function中呼叫自己，使其成為遞迴函式，但必須要在遊戲中(開始按鈕停用時)才呼叫，避免遊戲結束後繼續呼叫
+        ball.stop().animate({ top, left }, 2000, function () {
+          if ($(`#btn-start`).attr(`disabled`) === `disabled`) {
+            move(ball)
+          }
+        })
+      }
+
+      // 開始遊戲----------------------------------
+      $(`#btn-start`).click(function () {
+        //停用開始按鈕
+        $(`#btn-start`).attr(`disabled`, true)
+
+        // 重設分數及倒數秒數
+        score = 0
+        $(`#text-score`).text(score) //改分數的文字
+        countdown = 30
+        $(`#text-time`).text(countdown) //改倒數的文字
+
+        // 開始計時器------------------------------
+        timer = setInterval(function () {
+          //倒數
+          countdown--
+          $(`#text-time`).text(countdown)
+
+          const rand = Math.ceil(Math.random() * 10) //設定隨機常數0-10
+
+          if (rand >= 4 && $(`.greenBall`).length < 10) {
+            //球生成位置
+            const top = `${Math.round(Math.random() * 500)}px`
+            const left = `${Math.round(Math.random() * 800)}px`
+
+            // 將球的html設定為常數
+            const greenBall = $(
+              `<img src="./imgs/greenBall.png " class="ball greenBall" style="top:${top} ;left:${left}"> `
+            )
+
+            // 在遊戲區域內放入球
+            $(`#game`).append(greenBall)
+            // 移動球
+            move(greenBall)
+          }
+
+          if (rand >= 1 && rand <= 5 && $(`.purpleBall`).length < 5) {
+            const top = `${Math.round(Math.random() * 500)}px`
+            const left = `${Math.round(Math.random() * 800)}px`
+
+            const purpleBall = $(
+              `<img src="./imgs/purpleBall.png " class="ball purpleBall" style="top:${top} ;left:${left}"> `
+            )
+
+            $(`#game`).append(purpleBall)
+
+            move(purpleBall)
+          }
+
+          if (rand <= 1 && $(`.orangeBall`).length < 3) {
+            const top = `${Math.round(Math.random() * 500)}px`
+            const left = `${Math.round(Math.random() * 800)}px`
+
+            const orangeBall = $(
+              `<img src="./imgs/orangeBall.png " class="ball orangeBall" style="top:${top} ;left:${left}"> `
+            )
+
+            $(`#game`).append(orangeBall)
+
+            move(orangeBall)
+          }
+
+          // 時間到----------------------
+          if (countdown === 0) {
+            // 清除計時器
+            clearInterval(timer)
+            // 清空遊戲區域內的球及爆炸
+            $(`#game img`).remove()
+            //重新啟用按鈕
+            $(`#btn-start`).attr(`disabled`, false)
+
+            // 如果分數比最高分內的分數還高的話...
+            if (score > highscore.score) {
+              // 破紀錄的視窗，使用sweetalert2製作
+              swal
+                .fire({
+                  padding: '10px 0 30px',
+                  title: `TIME'S UP`,
+                  text: `BREAK THE RECORD ! YOU GOT ${score} POINTS`,
+                  inputPlaceholder: `ENTER YOUR NAME`,
+                  input: `text`,
+                  inputAttributes: {
+                    required: true //設定名字欄位為必填
+                  },
+                  validationMessage: `REQUIRED`,
+                  allowOutsideClick: false,
+                  allowEscapeKey: false
+                })
+                //這邊是sweetalert2的語法，result應該是抓上面輸入的值，也就是名字
+                .then((result) => {
+                  highscore.score = score //設定最高分為本次遊戲的分數
+                  highscore.name = result.value //設定名字為輸入的值
+                  $(`#text-highscorename`).text(highscore.name) //設定最高分玩家文字
+                  $(`#text-highscore`).text(highscore.score) //設定最高分文字
+
+                  //將最高分物件轉換為文字存入localstorage
+                  localStorage.shootinggame = JSON.stringify(highscore)
+                })
+            } else {
+              swal.fire({
+                padding: '10px 0 30px',
+                title: `TIME'S UP`,
+                text: `YOU GOT ${score} POINTS`
+              })
+            }
+          }
+        }, 1000)
+      })
+
+      // 擊中球的事件，因為球是後來產生的，所以使用監聽
+      $(`#game`).on(`click`, `.ball`, function () {
+        if ($(this).hasClass('orangeBall')) {
+          $(this).removeClass('orangeBall')
+          score += 5
+        } else if ($(this).hasClass('purpleBall')) {
+          $(this).removeClass('purpleBall')
+          score += 3
+        } else {
+          $(this).removeClass('greenBall')
+          score++
+        }
+        $(this).attr(`src`, `./imgs/explotion.gif`) //將圖片替換成爆炸
+        $(this).removeClass(`ball`).addClass(`explotion`) //將class從ball換成explotion
+        $(this).stop() //停止移動
+        $(this).fadeOut()
+        //分數加一
+        $(`#text-score`).text(score) //文字顯示分數
+      })
+    </script>
+  </body>
+</html>
